@@ -1,1 +1,1 @@
-python update.py git
+python3 update.py git https://github.com/civilwargeeky/RDT-Electronics/archive/master.zip

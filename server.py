@@ -17,19 +17,19 @@ G_GAIN = 0.070  # [deg/s/LSB]  If you change the dps for gyro, you need to updat
 AA =  0.40      # Complementary filter constant
 
 def sendCharactersEveryTenthOfASecond( msg ): #python is able to send things faster than the antenna can, here we slow python down so it's only sending a character every .007 seconds
-	#return;
-	msg=msg+"\r\n"
-	print(msg) #in addition to sending the data over antenna we will print it to the console
-	#and write it to a file...
-	with open('data.txt','a+') as f: #open data file to write
-		  f.write(msg) #write shit to our file
-	with serial.Serial() as ser: #initiate the serial functions we imported in the header in a variable called ser
-		ser.baudrate = 9600 #set the transfer rate of data to 9600
-		ser.port = '/dev/ttyUSB0' #transfer the data through the USB port
-		ser.open() #open the connection to the device on the other side of the USB
-		for c in msg: #break the string up into characters. One at a time call them c
-			ser.write(bytes(c, 'utf-8')) #write the character through the serial connection. Encode it as utf-8
-			time.sleep(.007) #sleep for .007 seconds so we don't send data too fast
+  #return;
+  msg=msg+"\r\n"
+  print(msg) #in addition to sending the data over antenna we will print it to the console
+  #and write it to a file...
+  with open('data.txt','a+') as f: #open data file to write
+      f.write(msg) #write shit to our file
+  with serial.Serial() as ser: #initiate the serial functions we imported in the header in a variable called ser
+    ser.baudrate = 9600 #set the transfer rate of data to 9600
+    ser.port = '/dev/ttyUSB0' #transfer the data through the USB port
+    ser.open() #open the connection to the device on the other side of the USB
+    for c in msg: #break the string up into characters. One at a time call them c
+      ser.write(bytes(c, 'utf-8')) #write the character through the serial connection. Encode it as utf-8
+      time.sleep(.007) #sleep for .007 seconds so we don't send data too fast
 
 #do GPS Initialization
 sendCharactersEveryTenthOfASecond("Initializing GPS...");    #Tell everyone gps is starting dog
@@ -49,43 +49,43 @@ sendCharactersEveryTenthOfASecond("...Server initialized successfully!"); #YAY I
 
 #Basically the main method.
 while True: #Loop forever waiting for stuff to happen
-	
-	try: #try-catch is used in case of errors. The program will keep running even if there is an error at some point
-		with serial.Serial() as ser: #initiate the serial functions we imported in the header in a variable called ser
-			ser.baudrate = 9600 #set the transfer rate of data to 9600
-			ser.port = '/dev/ttyUSB0' #transfer the data through the USB port
-			ser.open() #open the connection to the device on the other side of the USB
-			if(ser.inWaiting()>0):
-				x=ser.readline()
-				print(x)
-		newLocation = jr.getLocation()
-		if lastSaid != newLocation: #if the gps location is different from last time
-			lastSaid = newLocation #replace the variable keeping track of the last location
-			print(lastSaid)
-			sendCharactersEveryTenthOfASecond(repr(lastSaid)); print("Done") #send location over antenna
-		#sendCharactersEveryTenthOfASecond("OutOfGps")
-		c, addr = s.accept() #Try to accept a server connection...Accept whoever idc...
-		sendCharactersEveryTenthOfASecond('Got connection from'+ str(addr)) #Let the ground know we've made contact
-		data = c.recv(BUFFER_SIZE) #receive some of data from other guy
-		if data: #if the data they sent us is not bullshit
-			sendCharactersEveryTenthOfASecond(data.decode("utf-8")+'\n') #send over the antenna
-			#take the opportunity to log the BerryImus data as well.
-			ACCx = bimu.readACCx()
-			ACCy = bimu.readACCy()
-			ACCz = bimu.readACCz()
-			GYRx = bimu.readGYRx()
-			GYRy = bimu.readGYRy()
-			GYRz = bimu.readGYRz()
-			MAGx = bimu.readMAGx()
-			MAGy = bimu.readMAGy()
-			MAGz = bimu.readMAGz()
-			mag=math.sqrt(((ACCx * 0.224)/1000)* ((ACCx * 0.224)/1000)+((ACCy * 0.224)/1000)*((ACCy * 0.224)/1000)+((ACCz * 0.224)/1000)*((ACCz * 0.224)/1000))
-			sendCharactersEveryTenthOfASecond("BIMU accelerometer mag: "+str(mag)+" gx: "+str(GYRx)+" gy: "+str(GYRy)+" gz: "+str(GYRz)+" mx:"+str(MAGx)+" my: "+str(MAGy)+" mz: "+str(MAGz));
-		c.close() #Close connection--> See ya later bro
-	#except Exception as e: # if an error is thrown execute this block of code
-	#	sendCharactersEveryTenthOfASecond("Had an error:"+str(type(e)) + " " + str(e)) #try to send ground any error we get
-	#	pass
-	except KeyboardInterrupt:
+  
+  try: #try-catch is used in case of errors. The program will keep running even if there is an error at some point
+    with serial.Serial() as ser: #initiate the serial functions we imported in the header in a variable called ser
+      ser.baudrate = 9600 #set the transfer rate of data to 9600
+      ser.port = '/dev/ttyUSB0' #transfer the data through the USB port
+      ser.open() #open the connection to the device on the other side of the USB
+      if(ser.inWaiting()>0):
+        x=ser.readline()
+        print(x)
+    newLocation = jr.getLocation()
+    if lastSaid != newLocation: #if the gps location is different from last time
+      lastSaid = newLocation #replace the variable keeping track of the last location
+      print(lastSaid)
+      sendCharactersEveryTenthOfASecond(repr(lastSaid)); print("Done") #send location over antenna
+    #sendCharactersEveryTenthOfASecond("OutOfGps")
+    c, addr = s.accept() #Try to accept a server connection...Accept whoever idc...
+    sendCharactersEveryTenthOfASecond('Got connection from'+ str(addr)) #Let the ground know we've made contact
+    data = c.recv(BUFFER_SIZE) #receive some of data from other guy
+    if data: #if the data they sent us is not bullshit
+      sendCharactersEveryTenthOfASecond(data.decode("utf-8")+'\n') #send over the antenna
+      #take the opportunity to log the BerryImus data as well.
+      ACCx = bimu.readACCx()
+      ACCy = bimu.readACCy()
+      ACCz = bimu.readACCz()
+      GYRx = bimu.readGYRx()
+      GYRy = bimu.readGYRy()
+      GYRz = bimu.readGYRz()
+      MAGx = bimu.readMAGx()
+      MAGy = bimu.readMAGy()
+      MAGz = bimu.readMAGz()
+      mag=math.sqrt(((ACCx * 0.224)/1000)* ((ACCx * 0.224)/1000)+((ACCy * 0.224)/1000)*((ACCy * 0.224)/1000)+((ACCz * 0.224)/1000)*((ACCz * 0.224)/1000))
+      sendCharactersEveryTenthOfASecond("BIMU accelerometer mag: "+str(mag)+" gx: "+str(GYRx)+" gy: "+str(GYRy)+" gz: "+str(GYRz)+" mx:"+str(MAGx)+" my: "+str(MAGy)+" mz: "+str(MAGz));
+    c.close() #Close connection--> See ya later bro
+  #except Exception as e: # if an error is thrown execute this block of code
+  #  sendCharactersEveryTenthOfASecond("Had an error:"+str(type(e)) + " " + str(e)) #try to send ground any error we get
+  #  pass
+  except KeyboardInterrupt:
                 s.close()
                 
 s.close()

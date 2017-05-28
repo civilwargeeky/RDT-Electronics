@@ -1,1 +1,0 @@
-python3 update.py dropbox https://www.dropbox.com/sh/1eb59ew9rgbqj26/AAAYnqBaPLZnOv-TMSDJDhV7a?dl=1

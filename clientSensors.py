@@ -92,30 +92,30 @@ port = TCP_PORT
 
 
 def magnitude(x,y,z):
-	return math.sqrt(x*x+y*y+z*z)
-	
+  return math.sqrt(x*x+y*y+z*z)
+  
 def recordAndSendMessage(message):
-	if(timeTheRocketLaunched!=0):
-		message=str(time.time()-timeTheRocketLaunched)+": "+message
-	print message
-	fromServer="nothing"
-	if(sendDataToServer):
+  if(timeTheRocketLaunched!=0):
+    message=str(time.time()-timeTheRocketLaunched)+": "+message
+  print message
+  fromServer="nothing"
+  if(sendDataToServer):
             s = socket.socket()
             try:
                 with open('clientdata.txt','a+') as f: #open data file to write
                     f.write(message) #write shit to our file
                     f.write("From server:" + fromServer)
                 #print "connecting to server"
-		s.settimeout(.2)
-		s.connect((host, port))
-		#print "connected sending message"
-		s.send(message)
-		#print "sent message receiving message"
-		#fromServer=s.recv(1024)
-		#print "received from server 1"
-		#fromServer=s.recv(1024)
-		#print "received from server 2. Closing connection"
-		s.close()
+    s.settimeout(.2)
+    s.connect((host, port))
+    #print "connected sending message"
+    s.send(message)
+    #print "sent message receiving message"
+    #fromServer=s.recv(1024)
+    #print "received from server 1"
+    #fromServer=s.recv(1024)
+    #print "received from server 2. Closing connection"
+    s.close()
             except:
                 s.close()
                 print "Timeout"
@@ -125,48 +125,48 @@ if(not sendDataToServer):
 recordAndSendMessage("Client Initialized...Trying to read from accelerometer")
 
 while 1:
-	
-	accel_xout = read_word_2c(accel_xout_h) #We just need to put H byte address
-	accel_yout = read_word_2c(accel_yout_h) #as we are reading the word data
-	accel_zout = read_word_2c(accel_zout_h)
+  
+  accel_xout = read_word_2c(accel_xout_h) #We just need to put H byte address
+  accel_yout = read_word_2c(accel_yout_h) #as we are reading the word data
+  accel_zout = read_word_2c(accel_zout_h)
 
-	accel_xout_scaled = accel_xout / 2048.0 #According to the sensitivity you set
-	accel_yout_scaled = accel_yout / 2048.0
-	accel_zout_scaled = accel_zout / 2048.0
-	if ((accel_xout_scaled>1.5 or accel_yout_scaled>1.5 or accel_zout_scaled>1.5) and (accel_xout_scaled!=oldXAccel or accel_yout_scaled!=oldYAccel or accel_zout_scaled!=oldzAccel) and showAccelerometer):
-		recordAndSendMessage("Raw and Scaled Accelerometer data\n")
-		mag=magnitude(accel_xout_scaled,accel_yout_scaled,accel_zout_scaled)
-		if(mag>5 and not rockethaslaunched):
-			rockethaslaunched=True
-			p = vlc.MediaPlayer("R2_screaming.mp3")
-			p.play()
-			timeTheRocketLaunched=time.time()
-			time.clock()
-		if(mag<=5 and rockethaslaunched):
-			recordAndSendMessage("enabling stage transition\n")
-		recordAndSendMessage("X>\t Raw: "+ str(accel_xout)+ "\t Scaled: "+ str(accel_xout_scaled)+"\n")
-		recordAndSendMessage("Y>\t Raw: "+ str(accel_yout)+ "\t Scaled: "+ str(accel_yout_scaled)+"\n")
-		recordAndSendMessage("Z>\t Raw: "+ str(accel_zout)+ "\t Scaled: "+ str(accel_zout_scaled)+"\n")
-		recordAndSendMessage("Magnitude:"+ str(mag) +"\n")
-		oldXAccel=accel_xout_scaled
-		oldYAccel=accel_yout_scaled
-		oldzAccel=accel_zout_scaled
-	
-	gyro_xout = read_word_2c(gyro_xout_h) #We just need to put H byte address
-	gyro_yout = read_word_2c(gyro_yout_h) #as we are reading the word data
-	gyro_zout = read_word_2c(gyro_zout_h)
+  accel_xout_scaled = accel_xout / 2048.0 #According to the sensitivity you set
+  accel_yout_scaled = accel_yout / 2048.0
+  accel_zout_scaled = accel_zout / 2048.0
+  if ((accel_xout_scaled>1.5 or accel_yout_scaled>1.5 or accel_zout_scaled>1.5) and (accel_xout_scaled!=oldXAccel or accel_yout_scaled!=oldYAccel or accel_zout_scaled!=oldzAccel) and showAccelerometer):
+    recordAndSendMessage("Raw and Scaled Accelerometer data\n")
+    mag=magnitude(accel_xout_scaled,accel_yout_scaled,accel_zout_scaled)
+    if(mag>5 and not rockethaslaunched):
+      rockethaslaunched=True
+      p = vlc.MediaPlayer("R2_screaming.mp3")
+      p.play()
+      timeTheRocketLaunched=time.time()
+      time.clock()
+    if(mag<=5 and rockethaslaunched):
+      recordAndSendMessage("enabling stage transition\n")
+    recordAndSendMessage("X>\t Raw: "+ str(accel_xout)+ "\t Scaled: "+ str(accel_xout_scaled)+"\n")
+    recordAndSendMessage("Y>\t Raw: "+ str(accel_yout)+ "\t Scaled: "+ str(accel_yout_scaled)+"\n")
+    recordAndSendMessage("Z>\t Raw: "+ str(accel_zout)+ "\t Scaled: "+ str(accel_zout_scaled)+"\n")
+    recordAndSendMessage("Magnitude:"+ str(mag) +"\n")
+    oldXAccel=accel_xout_scaled
+    oldYAccel=accel_yout_scaled
+    oldzAccel=accel_zout_scaled
+  
+  gyro_xout = read_word_2c(gyro_xout_h) #We just need to put H byte address
+  gyro_yout = read_word_2c(gyro_yout_h) #as we are reading the word data
+  gyro_zout = read_word_2c(gyro_zout_h)
 
-	gyro_xout_scaled = gyro_xout / 16.4 #According to the sensitivity you set
-	gyro_yout_scaled = gyro_yout / 16.4
-	gyro_zout_scaled = gyro_zout / 16.4
-	
-	if((gyro_xout_scaled-oldgyroX>16 or gyro_yout_scaled-oldgyroy>16 or gyro_zout_scaled-oldgyroz>16) and showGyro):
-		recordAndSendMessage("Raw and Scaled Gyro data\n")
-		recordAndSendMessage("X>\t Raw: "+ str(gyro_xout) + "\t Scaled: "+ str(gyro_xout_scaled)+"\n")
-		recordAndSendMessage("Y>\t Raw: "+ str(gyro_yout)+ "\t Scaled: "+ str(gyro_yout_scaled)+"\n")
-		recordAndSendMessage("Z>\t Raw: "+ str(gyro_zout)+ "\t Scaled: "+ str(gyro_zout_scaled)+"\n")
-		oldgyroX=gyro_xout_scaled
-		oldgyroy=gyro_yout_scaled
-		oldgyroz=gyro_zout_scaled
-	
-	time.sleep(0.03)
+  gyro_xout_scaled = gyro_xout / 16.4 #According to the sensitivity you set
+  gyro_yout_scaled = gyro_yout / 16.4
+  gyro_zout_scaled = gyro_zout / 16.4
+  
+  if((gyro_xout_scaled-oldgyroX>16 or gyro_yout_scaled-oldgyroy>16 or gyro_zout_scaled-oldgyroz>16) and showGyro):
+    recordAndSendMessage("Raw and Scaled Gyro data\n")
+    recordAndSendMessage("X>\t Raw: "+ str(gyro_xout) + "\t Scaled: "+ str(gyro_xout_scaled)+"\n")
+    recordAndSendMessage("Y>\t Raw: "+ str(gyro_yout)+ "\t Scaled: "+ str(gyro_yout_scaled)+"\n")
+    recordAndSendMessage("Z>\t Raw: "+ str(gyro_zout)+ "\t Scaled: "+ str(gyro_zout_scaled)+"\n")
+    oldgyroX=gyro_xout_scaled
+    oldgyroy=gyro_yout_scaled
+    oldgyroz=gyro_zout_scaled
+  
+  time.sleep(0.03)

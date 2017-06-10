@@ -17,7 +17,13 @@
 import smbus
 from LSM9DS0 import *
 import time
+from time import sleep
+from ctypes import c_short
+
 bus = smbus.SMBus(1)
+
+addr = 0x77
+oversampling = 3        # 0..3
 
 class BerryImu():
   def __init__(self):
@@ -116,3 +122,60 @@ class BerryImu():
       gyr_combined = (gyr_l | gyr_h <<8)
 
       return gyr_combined  if gyr_combined < 32768 else gyr_combined - 65536
+   
+  def get_short(self, data, index):
+    return c_short((data[index] << 8) + data[index + 1]).value
+
+  def get_ushort(self, data, index):
+    return (data[index] << 8) + data[index + 1]
+
+  def getTempAndPressure(self):
+    toReturn="";
+    #(chip_id, version) = bus.read_i2c_block_data(addr, 0xD0, 2)
+    #toReturn=toReturn+"Chip Id:"+ str(chip_id)+ "Version:"+ str(version)
+    # Read whole calibration EEPROM data
+    cal = bus.read_i2c_block_data(addr, 0xAA, 22)
+    # Convert byte data to word values
+    ac1 = self.get_short(cal, 0)
+    ac2 = self.get_short(cal, 2)
+    ac3 = self.get_short(cal, 4)
+    ac4 = self.get_ushort(cal, 6)
+    ac5 = self.get_ushort(cal, 8)
+    ac6 = self.get_ushort(cal, 10)
+    b1 = self.get_short(cal, 12)
+    b2 = self.get_short(cal, 14)
+    mb = self.get_short(cal, 16)
+    mc = self.get_short(cal, 18)
+    md = self.get_short(cal, 20)
+    bus.write_byte_data(addr, 0xF4, 0x2E)
+    sleep(0.005)
+    (msb, lsb) = bus.read_i2c_block_data(addr, 0xF6, 2)
+    ut = (msb << 8) + lsb
+    bus.write_byte_data(addr, 0xF4, 0x34 + (oversampling << 6))
+    sleep(0.04)
+    (msb, lsb, xsb) = bus.read_i2c_block_data(addr, 0xF6, 3)
+    up = ((msb << 16) + (lsb << 8) + xsb) >> (8 - oversampling)
+    x1 = ((ut - ac6) * ac5) >> 15
+    x2 = (mc << 11) / (x1 + md)
+    b5 = x1 + x2 
+    t = int(b5 + 8) >> 4
+    b6 = b5 - 4000
+    b62 = int(b6 * b6) >> 12
+    x1 = (b2 * b62) >> 11
+    x2 = int(ac2 * b6) >> 11
+    x3 = x1 + x2
+    b3 = (((ac1 * 4 + x3) << oversampling) + 2) >> 2
+    x1 = int(ac3 * b6) >> 13
+    x2 = (b1 * b62) >> 16
+    x3 = ((x1 + x2) + 2) >> 2
+    b4 = (ac4 * (x3 + 32768)) >> 15
+    b7 = (up - b3) * (50000 >> oversampling)
+    p = (b7 * 2) / b4
+    #p = (b7 / b4) * 2
+    x1 = (int(p) >> 8) * (int(p) >> 8)
+    x1 = (x1 * 3038) >> 16
+    x2 = int(-7357 * p) >> 16
+    p = p + ((x1 + x2 + 3791) >> 4)
+    toReturn=toReturn+"Temperature:"+str(t/10.0)+ "C"
+    toReturn=toReturn+"Pressure:"+ str(p / 100.0)+ "hPa"
+    return toReturn

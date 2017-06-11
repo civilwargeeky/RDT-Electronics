@@ -25,18 +25,19 @@ stopSignal = Event() #This will be set when the antenna thread should be ended
 charQueue  = Queue() #This is an array of bytes. Bytes are added from sensor data, and removed by the antenna sending them
 
 #The antenna thread
-#PRE: serial is the serial port to send data to
-def AntennaThread(serial):
+#PRE: ser is the serial port to send data to
+def AntennaThread(ser):
   while True:
     try:
       char = charQueue.get(block = True, timeout = 5) #Waits for a new character
-      #Do byte sending stuff
+      #Do byte sending stuff. This will be more intelligent
       ser.write(bytes(char, "utf-8"))
       time.sleep(0.05)
     except Empty: #Catch exception if there are no bytes at the timeout
       pass
     finally: #Whether we get data or not, make sure we should not be ending
-      if stopSignal.is_set()
+      if stopSignal.is_set():
+        break
     
 ### End Asynchronous Code ###
 
@@ -45,14 +46,20 @@ def sendData( msg, sendOverAntenna = True ): #python is able to send things fast
   print(msg) #in addition to sending the data over antenna we will print it to the console
   #and write it to a file...
   with open('data.txt','a') as f: #open data file to write
-      f.write(msg) #write to our file
+    f.write(time.strftime("%H:%M:%M: ")) #Write a timestamp for each piece of data we send.
+    f.write(msg) #write to our file
   if sendDataOverXbee and sendOverAntenna:
     for char in msg:
       charQueue.put(char) #Add each character to our queue. This should always succeed, as we put no limit on the size of our queue
-        
+      
+def logData( msg ):
+  return sendData(msg, sendOverAntenna = False)
+
+### Initialization of various components ###
+      
 #Initialize the Antenna
 if sendDataOverXbee:
-  sendData("Initializing serial connection and antenna...", sendOverAntenna = False) #Antenna isn't initialized yet!
+  logData("Initializing serial connection and antenna...")
   ser = serial.Serial() #initiate the serial functions we imported in the header in a variable called ser
   ser.port = '/dev/ttyUSB0' #set to transfer the data through the USB port
   ser.baudrate = 9600 #set the transfer rate (baud) of data to 9600
@@ -60,20 +67,25 @@ if sendDataOverXbee:
   antennaThread = Thread(target = AntennaThread, args = (ser,)) #Create a new antenna thread, passing in our serial port. This begins waiting for data to be added to our queue
                                                    #Note: ^^ this is a tuple with one value.
 #do GPS Initialization
-sendData("Initializing GPS...", sendOverAntenna = False);    #Tell everyone gps is starting, don't need to send it over antenna
+logData("Initializing GPS...");    #Tell everyone gps is starting, don't need to send it over antenna
 jr = GPS() #initialize the gps from the import we did as a variable called jr
 bimu=BerryImu() #initialize the imu from the import we did as a variable called bimu
-sendData("...GPS Initialized successfully!", False); #YAY IT WORKED. Don't need to specify the argument name, don't send over antenna
+logData("...GPS Initialized successfully!"); #YAY IT WORKED. Don't need to specify the argument name, don't send over antenna
 
 #do lastSaid Initialization
 lastSaid="random"  #to make sure we aren't sending a bunch of repetitive data, keep track of what was last said. Since nothings been said so far we just assign it "random"
 
 #Do server Initialization
-sendData("Initializing Server..."); #Tell everyone server is starting
+logData("Initializing Server..."); #Tell everyone server is starting
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  #sets up socket configuration->Stream of data is nice
 s.bind((TCP_IP, TCP_PORT)) #communication can now happen at the host ip/port
 s.listen(5) #Wait for clients--> max of 5 connections
-sendData("...Server initialized successfully!"); #YAY IT Worked!
+logData("...Server initialized successfully!"); #YAY IT Worked!
+
+sendData("All Components Initialized") #Send over antenna that it worked
+
+### End component initialization
+
 #Literally the main method.
 def main():
   accelerating = False

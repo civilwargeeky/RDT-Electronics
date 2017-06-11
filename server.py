@@ -5,7 +5,7 @@ import sys #brings in python code to discover information about the hardware on 
 import math #brings in python code for functions like square root, power, etc.
 
 TCP_IP = '192.168.100.2' #ip of this raspberry pi (the server). Tell the client this is where to connect to.
-TCP_PORT = 88 #random number on the ip where we talk. Tell the client this is where to connect to.
+TCP_PORT = 7 #random number on the ip where we talk. Tell the client this is where to connect to.
 BUFFER_SIZE = 1024 #Number of bytes of data we receive at a time
 
 from GPS import * #brings in python code for reading from the GPS module.
@@ -74,59 +74,55 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  #sets up socket configura
 s.bind((TCP_IP, TCP_PORT)) #communication can now happen at the host ip/port
 s.listen(5) #Wait for clients--> max of 5 connections
 sendData("...Server initialized successfully!"); #YAY IT Worked!
-count=0
 #Literally the main method.
 def main():
-  while True: #Loop forever waiting for stuff to happen
+  accelerating = False
+  previousMag = 0
+  count = 0
+  while True:
     try: #try-catch is used in case of errors. The program will keep running even if there is an error at some point
-      if count%3000==0:
-        sendData(repr(jr.getLocation())+'\n')
-        #take the opportunity to log the BerryImus data as well.
-        ACCx = bimu.readACCx()
-        ACCy = bimu.readACCy()
-        ACCz = bimu.readACCz()
-        GYRx = bimu.readGYRx()
-        GYRy = bimu.readGYRy()
-        GYRz = bimu.readGYRz()
-        MAGx = bimu.readMAGx()
-        MAGy = bimu.readMAGy()
-        MAGz = bimu.readMAGz()
-        pressTemp=bimu.getTempAndPressure();
-        mag=math.sqrt(((ACCx * 0.224)/1000)* ((ACCx * 0.224)/1000)+((ACCy * 0.224)/1000)*((ACCy * 0.224)/1000)+((ACCz * 0.224)/1000)*((ACCz * 0.224)/1000))
+      #sendData(repr(jr.getLocation())+'\n')
+      #take the opportunity to log the BerryImus data as well.
+      ACCx = bimu.readACCx()
+      ACCy = bimu.readACCy()
+      ACCz = bimu.readACCz()
+      GYRx = bimu.readGYRx()
+      GYRy = bimu.readGYRy()
+      GYRz = bimu.readGYRz()
+      MAGx = bimu.readMAGx()
+      MAGy = bimu.readMAGy()
+      MAGz = bimu.readMAGz()
+      pressTemp=bimu.getTempAndPressure();
+      mag=math.sqrt(((ACCx * 0.224)/1000)**2 +((ACCy * 0.224)/1000)**2 + ((ACCz * 0.224)/1000)**2)
+      if previousMag == 0:
+        previousMag = mag
+      if mag - previousMag >= 0.3:    #current acceleration minus previous acceleration to see if rocket is accelerating
+        accelerating = True
+      else:
+        count = count + 1
+      if count % 30 == 0:
+        sendData(repr(jr.getLocation()))
+      if accelerating:
         sendData("BIMU acc mag: "+str(mag)+" gx: "+str(GYRx)+" gy: "+str(GYRy)+" gz: "+str(GYRz)+" mx:"+str(MAGx)+" my: "+str(MAGy)+" mz: "+str(MAGz)+str(pressTemp));
-        count=1
       newLocation = jr.getLocation()
       if lastSaid != newLocation: #if the gps location is different from last time
         lastSaid = newLocation #replace the variable keeping track of the last location
         print(lastSaid)
         sendData(repr(lastSaid)); print("Done") #send location over antenna
       #sendData("OutOfGps")
+      s.settimeout(0.01)
       c, addr = s.accept() #Try to accept a server connection...Accept whoever idc...
       #sendData('Got connection from'+ str(addr)) #Let the ground know we've made contact
       data = c.recv(BUFFER_SIZE) #receive some of data from other guy
+      c.close() #Close connection--> See ya later bro
       if data: #if the data they sent us is not bs
         sendData(data.decode("utf-8")+'\n') #send over the antenna
-        sendData(jr.getLocation()+'\n')
-        #take the opportunity to log the BerryImus data as well.
-        ACCx = bimu.readACCx()
-        ACCy = bimu.readACCy()
-        ACCz = bimu.readACCz()
-        GYRx = bimu.readGYRx()
-        GYRy = bimu.readGYRy()
-        GYRz = bimu.readGYRz()
-        MAGx = bimu.readMAGx()
-        MAGy = bimu.readMAGy()
-        MAGz = bimu.readMAGz()
-        pressTemp=bimu.getTempAndPressure();
-        mag=math.sqrt(((ACCx * 0.224)/1000)**2 +((ACCy * 0.224)/1000)**2 + ((ACCz * 0.224)/1000)**2)
-        sendData("BIMU acc mag: "+str(mag)+" gx: "+str(GYRx)+" gy: "+str(GYRy)+" gz: "+str(GYRz)+" mx:"+str(MAGx)+" my: "+str(MAGy)+" mz: "+str(MAGz)+str(pressTemp));
-      c.close() #Close connection--> See ya later bro
-      count=count+1
+        sendData(repr(jr.getLocation())+'\n')
     #except Exception as e: # if an error is thrown execute this block of code
     #  sendData("Had an error:"+str(type(e)) + " " + str(e)) #try to send ground any error we get
     #  pass
-    except KeyboardInterrupt:
-      break
+    except socket.timeout:
+      pass
 
 
 #If this code is not imported as a module, run the main function
